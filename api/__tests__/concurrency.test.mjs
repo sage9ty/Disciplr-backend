@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 import request from 'supertest'
 
 import app from '../index.mjs'
@@ -11,8 +11,10 @@ const STELLAR = 'GDLYZ73G3GEF36HBLEBFXOXAP5IXJDRQCRG47JCKR4XAXNOFCU44NZT2'
 const CREATOR = 'GBVAQKGA5P4TIZSZJBS5AW3XNJOTYG6I3Y5CLIGCBBUZDHMVF7YE7XCQ'
 const API_PREFIX = '/api/v1'
 
+const PG_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+
 async function hasPostgres() {
-  const url = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+  const url = PG_URL
   try {
     const { default: pg } = await import('pg')
     const pool = new pg.Pool({ connectionString: url, ssl: false, max: 1 })
@@ -26,6 +28,8 @@ async function hasPostgres() {
 
 const postgresReady = await hasPostgres()
 const postgresTest = postgresReady ? test : test.skip
+
+after(() => resetStore())
 
 async function seedVault(vault) {
   const s = await getStore()
@@ -66,7 +70,7 @@ function buildMilestones(count, status = 'pending') {
 async function cleanupPgVault(vaultId) {
   const pg = await import('pg')
   const pool = new pg.default.Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr',
+    connectionString: PG_URL,
     ssl: false,
   })
   try {
@@ -84,7 +88,7 @@ async function scenarioA(kind, usePg = false) {
     milestones: buildMilestones(20),
   })
   if (usePg) {
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+    process.env.DATABASE_URL = PG_URL
     await resetStore()
   } else {
     process.env.DATABASE_URL = ''
@@ -124,7 +128,7 @@ async function scenarioB(kind, usePg = false) {
   })
 
   if (usePg) {
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+    process.env.DATABASE_URL = PG_URL
     await resetStore()
   } else {
     process.env.DATABASE_URL = ''
@@ -167,7 +171,7 @@ async function scenarioC(kind, usePg = false) {
   })
 
   if (usePg) {
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+    process.env.DATABASE_URL = PG_URL
     await resetStore()
   } else {
     process.env.DATABASE_URL = ''
@@ -207,7 +211,7 @@ async function scenarioD(usePg = false) {
   })
 
   if (usePg) {
-    process.env.DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:5432/disciplr'
+    process.env.DATABASE_URL = PG_URL
     await resetStore()
   } else {
     process.env.DATABASE_URL = ''
